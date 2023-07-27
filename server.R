@@ -83,22 +83,28 @@ shinyServer(function(input, output, session) {
   
   output$plot_state_pop <- renderPlot({
     state_pop %>%
-      ggplot(aes(x = reorder(state, -state_pop), y = state_pop)) +
-      geom_col(fill = "lightblue") +
-      labs(title="State population for US Census for 2021") +
+      mutate(highlight = ifelse(state == input$state, "1", "0")) %>%
+      ggplot(aes(x = reorder(state, -state_pop), y = state_pop, fill=highlight)) +
+      geom_bar(stat="identity") +
+      ggtitle("State population for US Census for 2021") +
       xlab("State") +
       ylab("Population") +
-      theme(axis.text.x = element_text(angle = 90))
+      theme(axis.text.x = element_text(angle = 90)) +
+      scale_fill_manual( values = c( "1"="darkgreen", "0"="lightblue" ),guide = FALSE )
   })
   
   output$track_sun_plot <- renderPlot({
-    #    flights_delay() %>%
     track_sun %>%
-      ggplot(aes(x = reorder(state, -tot_capacity), y = tot_capacity)) +
-      geom_col(fill = "lightblue") +
-      labs(title="Amount of output (kw (DC)) by state") +
-      xlab("state") +
-      ylab("kw (DC)")
+      left_join(state_pop, by=c('state'='state_id')) %>%
+      rename(state_name=state.y) %>%
+      mutate(highlight = ifelse(state_name == input$state, "1", "0")) %>%
+      ggplot(aes(x = reorder(state_name, -tot_capacity), y = tot_capacity, fill=highlight)) +
+      geom_bar(stat="identity") +
+      ggtitle("Amount of output (kw (DC)) by state") +
+      xlab("State") +
+      ylab("Kw (DC)") +
+      theme(axis.text.x = element_text(angle = 90)) +
+      scale_fill_manual( values = c( "1"="darkgreen", "0"="lightblue" ),guide = FALSE )
   })
   
   output$egrid_bystate <- renderPlot({

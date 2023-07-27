@@ -68,6 +68,10 @@ summary(track_sun_by_state)
 #write the cleaned dataframe to file, so it can be loaded by the shiny app
 write.csv(track_sun_by_state, "./data/track_sun.csv", row.names=FALSE)
 
+track_sun <- read.csv(file = "./data/track_sun.csv")
+track_sun %>%
+  left_join(state_pop, by=c('state'='state_id')) %>%
+  rename(state_name=state.y)
 
 ###################GEI - Avg retail electricity price###########################
 #https://www.globalenergyinstitute.org/average-electricity-retail-prices-map
