@@ -23,6 +23,8 @@ write.csv(eGRID_RAW, "./data/eGrid.csv", row.names=FALSE)
 eGrid = eGRID_RAW[,-5] 
 head(eGrid)
 
+eGrid <- read.csv(file = "./data/eGrid.csv")
+
 eGrid %>%
   filter(Year==2018 & Type=="total") %>%
   ggplot(aes(x = reorder(Region, -Generation_Mwh), y = Generation_Mwh)) +
@@ -44,6 +46,12 @@ eGrid %>%
   ylab("MWh") +
   theme(axis.text.x = element_text(angle = 90))
 
+df = eGrid %>%
+  filter(Year==2021) %>%
+  spread("Type", "Generation_Mwh") %>%
+  mutate(gap=total-solar) %>%
+  rename(state=Region) 
+df$state
 
 ####################Tracking the Sun - Solar Generation Capacity################
 #load the raw data from the csv from the website
@@ -84,15 +92,24 @@ gei_price_RAW <- read.csv(file = "./data/GEI/GlobalEnergyInstitute-avg-electrici
 gei_price = gei_price_RAW %>% 
   transmute(squished = str_squish(cents.per.kilowatt.hour)) %>%
   separate(squished, c('State', 'Cents per kwh'), sep="\\s+(?=\\S*$)")
-gei_price
+gei_price = gei_price %>%
+  rename("Cents_per_kwh" = "Cents per kwh")
+gei_price = rbind(gei_price, list('Puerto Rico', 0))
 
 #write the cleaned dataframe to file, so it can be loaded by the shiny app
 write.csv(gei_price, "./data/gei_price.csv", row.names=FALSE)
 gei_price <- read.csv(file = "./data/gei_price.csv")
+gei_price
 
+df = gei_price %>%
+  rename("gap"="Cents_per_kwh") %>%
+  rename(state=State) #Rename column because the plot_usmap expects a column state or fips
+df = rbind(df, list('Puerto Rico', 0))
+df
+        
 gei_price %>%
   mutate(highlight = ifelse(State == "California", "1", "0")) %>%
-  ggplot(aes(x = reorder(State, -Cents.per.kwh), y = Cents.per.kwh, fill=highlight)) + 
+  ggplot(aes(x = reorder(State, -Cents_per_kwh), y = Cents_per_kwh, fill=highlight)) + 
   geom_bar(stat="identity") +
   ggtitle("Average Retail Electricity Price (Cents per kilowatt hour) by state for 2021") +
   xlab("State") +
